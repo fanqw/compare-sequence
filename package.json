@@ -38,7 +38,7 @@
       "./package.json"
     ],
     "win": {
-      "icon": "./public/icons/desktop.ico",
+      "icon": "./public/icons/favicon.ico",
       "artifactName": "${productName}.${ext}"
     }
   },
@@ -49,9 +49,9 @@
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "runAfterFinish": true,
-    "installerIcon":  "./public/icons/desktop.ico", 
-    "uninstallerIcon":  "./public/icons/desktop.ico",
-    "installerHeaderIcon":  "./public/icons/desktop.ico",
+    "installerIcon":  "./public/icons/favicon.ico", 
+    "uninstallerIcon":  "./public/icons/favicon.ico",
+    "installerHeaderIcon":  "./public/icons/favicon.ico",
     "shortcutName": "对比序列"
   },
   "eslintConfig": {
