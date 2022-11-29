@@ -140,7 +140,7 @@ function App() {
   };
   return (
     <div className='App'>
-      <div className='title'>范钦旺的大饼V0.0.1</div>
+      <div className='title'>对比序列V0.0.1</div>
       <div className='card'>
         <Form
           name='basic'
@@ -162,7 +162,7 @@ function App() {
             </Upload>
           </Form.Item>
           <Form.Item label='请输入源序列' name='origin' rules={[{ required: true, message: '请输入源序列!' }]}>
-            <Input.TextArea placeholder='请输入源序列' />
+            <Input.TextArea rows={5} placeholder='请输入源序列' />
           </Form.Item>
 
           <Form.Item wrapperCol={{ offset: 4, span: 16 }}>
