@@ -1,0 +1,20 @@
+.compareList-modal {
+  overflow: scroll;
+  display: grid;
+}
+
+.compareList-modal-item {
+  display: flex;
+  align-items: center;
+}
+
+.compareList-btnContainer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.compareList-btn {
+  margin-right: 12px;
+}

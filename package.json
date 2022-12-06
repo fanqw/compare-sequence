@@ -9,6 +9,7 @@
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
     "antd": "^5.0.2",
+    "diff": "^5.1.0",
     "electron-reloader": "^1.2.3",
     "exceljs": "^4.3.0",
     "react": "^18.2.0",
@@ -49,9 +50,9 @@
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "runAfterFinish": true,
-    "installerIcon":  "./public/icons/favicon.ico", 
-    "uninstallerIcon":  "./public/icons/favicon.ico",
-    "installerHeaderIcon":  "./public/icons/favicon.ico",
+    "installerIcon": "./public/icons/favicon.ico",
+    "uninstallerIcon": "./public/icons/favicon.ico",
+    "installerHeaderIcon": "./public/icons/favicon.ico",
     "shortcutName": "对比序列"
   },
   "eslintConfig": {
