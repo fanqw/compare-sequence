@@ -20,8 +20,10 @@ const csv2Arr = async (file) =>
           const originEnd = parseInt(data[6]) < parseInt(data[7]) ? parseInt(data[7]) : parseInt(data[6]);
           const targetStart = parseInt(data[8]) < parseInt(data[9]) ? parseInt(data[8]) : parseInt(data[9]);
           const targetEnd = parseInt(data[8]) < parseInt(data[9]) ? parseInt(data[9]) : parseInt(data[8]);
+          const anomaly = parseInt(data[8]) > parseInt(data[9])
           return {
             key: `${originStart}-${originEnd}-${targetStart}-${targetEnd}`,
+            anomaly,
             rate: data[2],
             originStart,
             originEnd,
@@ -140,7 +142,7 @@ function UploadFile({ originContent, setOriginContent, setShowTable, setData }) 
     }
     const result = originData.map((item) => ({
       ...item,
-      originValue: originContent.slice(item.originStart, item.originEnd),
+      originValue: originContent.slice(item.originStart - 1, item.originEnd),
       targetValue:
         targetMap[`${item.targetStart}-${item.targetEnd}`] || targetMap[`${item.targetEnd}-${item.targetStart}`],
     }));

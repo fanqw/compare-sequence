@@ -1,13 +1,18 @@
-import { Button, Modal, Table, Tooltip } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
+import { Alert, Button, Modal, Table, Tooltip } from 'antd';
 import { diffChars } from 'diff';
-import React, { useState } from 'react';
+import html2canvas from "html2canvas";
+import React, { useRef, useState } from 'react';
 import './index.css';
 const ExcelJS = require('exceljs');
 
 function ComapreList ({ originContent, data, setShowTable, setData }) {
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedAll, setSelectedAll] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const compare = useRef();
+
   const columns = [
     {
       title: '匹配率',
@@ -55,14 +60,17 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
 
   const rowSelection = {
     type: 'checkbox',
-    selectedRowKeys,
-    onChange: (selectedRowKeys, selectedRows) => {
-      setSelectedRowKeys(selectedRowKeys);
+    selectedRowKeys: selectedRows.map(item => item.key),
+    onChange: (_, selectedRows) => {
       setSelectedRows(selectedRows);
     },
+    getCheckboxProps: (record) => ({
+      disabled: record.anomaly, // Column configuration not to be checked
+      // name: record.name,
+    }),
   };
 
-  const hasSelected = selectedRowKeys.length > 0;
+  const hasSelected = selectedRows.length > 0;
 
   const handleExportCSV = async () => {
     const workbook = new ExcelJS.Workbook();
@@ -87,7 +95,47 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
     a.click();
   };
 
+  const handleSelectAll = () => {
+    if (selectedAll) {
+      setSelectedAll(false);
+      setSelectedRows([]);
+    } else {
+      const rows = []
+      for (const item of data) {
+        if (!item.anomaly) {
+          rows.push(item);
+        }
+      }
+      setSelectedAll(true);
+      setSelectedRows(rows);
+    }
+  }
+
+  const handleDownload = () => {
+    setLoading(true)
+    html2canvas(compare.current, {
+      allowTaint: false, 
+      useCORS: true, // 允许跨域
+      tainttest: true, // 检测每张图片都已经加载完成
+      logging: true,
+      backgroundColor: `rgb(255,255,255)`, // 转换图片可能会有白色底色，你可根据你的页面或者PM要求设置一下背景色，不要的话就null
+    }).then((canvas) => {
+      //  转成图片，生成图片地址
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'compare';
+        a.click();
+        setLoading(false)
+      })
+    });
+  }
+
+  const anomalyCount = data.length - selectedRows.length;
+
   const show = () => {
+    // console.log('selectedRows', selectedRows);
     let originLocation = [];
     let targetLocation = [];
     for (let index = 0; index < selectedRows.length; index++) {
@@ -105,6 +153,7 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
             fill: true,
           })
           location.push({
+            key: element.key,
             index: origin.length - 1,
             value: item.value,
             fill: true,
@@ -118,6 +167,7 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
             isChange: true,
           })
           location.push({
+            key: element.key,
             index: origin.length - 1,
             value: new Array(item.count).fill(' ').join(''),
             isChange: true,
@@ -141,7 +191,7 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
       formatStr = strArr.reduce((acc, cur, index) => {
         const find = location.find(item => item.index === index) || {};
         let value = '';
-        if (index < beforeFill - 1) {
+        if (index < beforeFill - 2) {
           cur = '.'
           value = new Array(find?.value?.length || 0).fill('.').join('')
         }
@@ -156,15 +206,39 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
         if (find.isChange) {
           acc = `${acc}${values}`;
         } else if (find.fill) {
-          acc = `${acc}<div style="background-color: #1890ff; width: 12px; padding: 0 4px; text-align: center">${cur}</div>${values}`
+          acc = `${acc}<div style="background-color: rgb(45, 183, 245); width: 12px; padding: 0 4px; text-align: center">${cur}</div>${values}`
         } else {
-          acc = `${acc}<div style="background-color: #1890ff; width: 12px; padding: 0 4px; text-align: center">${cur}</div>`
+          acc = `${acc}<div style="background-color: rgb(45, 183, 245); width: 12px; padding: 0 4px; text-align: center">${cur}</div>`
         }
         return acc;
       }, formatStr)
       return formatStr
     }
   
+    // originLocation = originLocation.reduce((acc, cur, index) => {
+    //   if (index === 0) {
+    //     acc.push(cur);
+    //     return acc;
+    //   }
+    //   const last = acc.pop();
+    //   if (last.index !== cur.index) {
+    //     acc.push(last, cur);
+    //     return acc;
+    //   }
+    //   const value = [last.value, cur.value].map(val => {
+    //     if (val && val.trim() === '') {
+    //       return val.slice(0, val.length - 1);
+    //     }
+    //     return val;
+    //   }).join('');
+    //   acc.push({
+    //     ...last,
+    //     value,
+    //     isChange: true,
+    //   })
+    //   return acc;
+    // }, [])
+
     // console.log('originLocation', originLocation);
     // console.log('targetLocation', targetLocation);
     const originText = format(originLocation);
@@ -179,38 +253,46 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
           return acc;
         }
         const last = acc.pop();
+        if(last.index === cur.index && last.key !== cur.key ) {
+          acc.push(last);
+          return acc;
+        }
         if (last.index !== cur.index) {
           acc.push(last, cur);
           return acc;
         }
         const value = [last.value, cur.value].map(val => {
-          if (val.includes(' ')) {
+          if (val && val.trim() === '') {
             return val.slice(0, val.length - 1);
           }
           return val;
         }).join('');
         acc.push({
-          ...last,
+          // ...last,
+          key: last.key,
+          index: last.index,
           value,
           isChange: true,
         })
         return acc;
       }, [])
   
-  
-      console.log('location===', location);
+      // console.log('location===', location);
       // const arr = _.cloneDeep(originLocation);
-      return format(location , item.beforeFill, item.afterFill, index)
+      return {
+        key: item.key,
+        content: format(location , item.beforeFill, item.afterFill, index),
+      }
   
     });
 
     const len = 20 * originContent.length;
     
     return (
-      <div style={{ marginTop: '20px' }}>
+      <div ref={compare} style={{ marginTop: '20px' }}>
         <div dangerouslySetInnerHTML={{ __html: `<div class='compareList-modal-item' style="width: ${len}px">${originText}</div>`}}></div>
         {
-          targetTexts.map(item => <div dangerouslySetInnerHTML={{ __html: `<div class='compareList-modal-item' style="width: ${len}px">${item}</div>`}}></div>)
+          targetTexts.map(item => <div dangerouslySetInnerHTML={{ __html: `<div key=${item.key} class='compareList-modal-item' style="width: ${len}px">${item.content}</div>`}}></div>)
         }
       </div>
     )
@@ -245,20 +327,23 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
         >
           对比结果
         </Button>
+        {selectedAll && anomalyCount > 0 && <Alert message={`发现${anomalyCount}条数据异常，未加入比对`} showIcon type="warning" />}
+      </div>
+      <div className='compareList-total'>
+        {selectedRows.length === 0 && (
+          <span>共 {data.length} 项</span>
+        )}
+        {selectedRows.length > 0 && (
+          <span>已选 <span className='compareList-total-light'>{selectedRows.length}</span> / {data.length} 项</span>
+        )}
+        <Button type="link" className='compareList-total-btn' onClick={() => handleSelectAll()}>
+          {selectedAll ? '取消全选' : '一键全选'}
+        </Button>
       </div>
       <Table 
         columns={columns}
         rowSelection={rowSelection}
         dataSource={data}
-        // dataSource={[{
-        //   key: 1,
-        //   originStart: 32,
-        //   originEnd: 32,
-        //   originValue: 'TGCTTTCTTTTTCATCGCTAGGTGGGGTAATATCATACATAGGATCGTGTGGGGGCTCTCCCAACCGCACCAGCCCCGTGTCCATGTACAGTGAGAACTCCAACAGCAGCCTGCAGTCCTTTACGCAACCCTGCTTTGGTTCTTCATTTCCACCA',
-        //   targetStart: 187,
-        //   targetEnd: 187,
-        //   targetValue: 'TGCTTTCTTTTTCATCGCTAGGTGGGGTAATATCATACATAGGATCGTGTGGGGGCTCTCCCAACCGCACCAGCCCCGTGTCCATGTACAGTGAGAACTCCAACAGCAGCCTGCAGTCCTTTACGCAACCCTGCTTTGGTTCTTCATTTCCACCA',
-        // }]}
       />
       <Modal
         title="对比结果"
@@ -266,10 +351,14 @@ function ComapreList ({ originContent, data, setShowTable, setData }) {
         open={visible}
         onCancel={() => setVisible(false)}
         width={1000}
-        footer={null}
+        footer={
+          <div className='compareList-modal-footer'>
+            <Button icon={<DownloadOutlined />} loading={loading} onClick={() => handleDownload()}>{loading ? '下载中' : '下载'}</Button>
+          </div>
+        }
       >
         <div className='compareList-modal'>
-          {show()}
+          {visible && show()}
         </div>
       </Modal>
     </div>

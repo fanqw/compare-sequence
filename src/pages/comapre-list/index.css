@@ -1,6 +1,12 @@
 .compareList-modal {
   overflow: scroll;
   display: grid;
+  min-height: 150px;
+  max-height: 500px;
+}
+
+.compareList-modal-footer {
+  text-align: center;
 }
 
 .compareList-modal-item {
@@ -12,9 +18,22 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin-bottom: 24px;
 }
 
 .compareList-btn {
   margin-right: 12px;
+}
+
+.compareList-total {
+  display: flex;
+  align-items: center;
+  margin: 12px 6px;
+}
+
+.compareList-total-light {
+  color: #1890ff;
+}
+
+.compareList-total-btn {
+  margin: 0 12px;
 }
